@@ -141,8 +141,18 @@ def main(ip, scan=False):
     logfile.close()
 
 
-detected_ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2]
-               if not ip.startswith("127.")][0])
+def detect_ip():
+    """ Get current 'default' IP address
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('example.com', 0))
+        ip_address = s.getsockname()[0]
+    except socket.error:
+        ip_address = '127.0.0.1'
+    finally:
+        s.close()
+    return ip_address
 
 
 if __name__ == "__main__":
@@ -151,12 +161,12 @@ if __name__ == "__main__":
               "Detected IP: %s\n"
               "1) Continue with detected IP (creates 254 entries)\n"
               "2) Enter another IP (creates one entry)\n"
-              "3) Exit\n" % detected_ip)
+              "3) Exit\n" % detect_ip())
         try:
             answer = int(raw_input("Selection? "))
             if answer == 1:
                 setup_log()
-                main(detected_ip, scan=True)
+                main(detect_ip(), scan=True)
                 sys.exit()
             elif answer == 2:
                 choiceIP = raw_input("Input IP: ")
