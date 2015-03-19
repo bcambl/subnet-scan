@@ -68,10 +68,7 @@ def get_ping(ip):
     :param ip: IP address
     :return: latency
     """
-    if os.name == 'nt':  # Windows
-        ping_command = "ping -n 1 " + ip
-    elif os.name == 'posix':  # Linux
-        ping_command = "ping -c 1 " + ip
+    ping_command = "ping -c 1 " + ip
     ping = subprocess.Popen(ping_command,
                             shell=True, stdout=subprocess.PIPE)
     ping_output = ping.communicate()
@@ -141,15 +138,26 @@ def main(ip, scan=False):
     logfile.close()
 
 
-def detect_ip():
-    """ Get current 'default' IP address
+def detect_ip(ip_address=None):
+    """ Create a UDP socket connection to populate getsockname()
+    The address does not actually need to resolve ie: 1.2.3.4
+    :param ip_address: Default IP of None
+    :return: Detected IP or a manually entered valid IP
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        s.connect(('example.com', 0))
+        s.connect(('1.2.3.4', 0))
         ip_address = s.getsockname()[0]
     except socket.error:
-        ip_address = '127.0.0.1'
+        print("Unable to your detect IP..\n"
+              "Please provide an IP from your subnet")
+        while True:
+            if not ip_address or not validate_ip(ip_address):
+                ip_address = raw_input("IP: ")
+            else:
+                break
+        else:
+            sys.exit("Quitting..")
     finally:
         s.close()
     return ip_address
@@ -169,10 +177,10 @@ if __name__ == "__main__":
                 main(detect_ip(), scan=True)
                 sys.exit()
             elif answer == 2:
-                choiceIP = raw_input("Input IP: ")
-                if validate_ip(choiceIP):
+                provided_ip = raw_input("Input IP: ")
+                if validate_ip(provided_ip):
                     setup_log()
-                    main(choiceIP)
+                    main(provided_ip)
                     sys.exit()
                 else:
                     print "Invalid IP"
